@@ -1,0 +1,6 @@
+ktor:
+    application:
+        modules:
+            - com.github.analyzer.ApplicationKt.module
+    deployment:
+        port: $PORT
