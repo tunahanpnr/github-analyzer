@@ -10,6 +10,8 @@ object RepositoryService {
         repositoryList.filter { it.repoFiles.isNotEmpty() }
             .forEach { repository -> repository.setClassNameOfTheRepoFiles() }
 
+        ElasticsearchService.saveRepositoryBulk(repositoryList)
+
         return repositoryList
     }
 }

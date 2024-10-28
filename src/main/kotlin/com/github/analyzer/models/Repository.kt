@@ -46,9 +46,9 @@ class Repository(
     }
 
     private fun getClassNamesFromJavaFile(content: String): List<String> {
-        val classRegex = Regex("\\bclass\\s+(\\w+)")
+        val regex = Regex("\\b(class|interface)\\s+(\\w+)")
 
-        return classRegex.findAll(content)
+        return regex.findAll(content)
             .map { it.groupValues[1] }
             .toList()
     }

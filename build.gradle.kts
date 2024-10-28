@@ -33,6 +33,10 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json")
     implementation("io.ktor:ktor-client-content-negotiation")
 
+    implementation("co.elastic.clients:elasticsearch-java:8.15.3")
+    implementation("io.github.oshai:kotlin-logging-jvm:7.0.0")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.18.0")
+
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("io.ktor:ktor-server-config-yaml")
     testImplementation("io.ktor:ktor-server-test-host-jvm")
