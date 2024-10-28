@@ -1,6 +1,6 @@
 package com.github.analyzer.plugins
 
-import com.github.analyzer.crawlers.JavaRepositoryCrawler
+import com.github.analyzer.service.RepositoryService
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -13,8 +13,7 @@ fun Application.configureRouting() {
         }
 
         get("/repositories") {
-            val javaRepositoryCrawler = JavaRepositoryCrawler()
-            val repositories = javaRepositoryCrawler.searchRepositories()
+            val repositories = RepositoryService.fetchAndSaveAll()
             call.respond(repositories)
         }
     }

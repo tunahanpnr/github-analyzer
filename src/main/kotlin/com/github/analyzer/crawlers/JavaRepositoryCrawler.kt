@@ -1,7 +1,8 @@
 package com.github.analyzer.crawlers
 
 
-class JavaRepositoryCrawler : RepositoryCrawler {
-    override val LANGUAGE: String = "JAVA"
-    override val LIMIT: String = "5"
+object JavaRepositoryCrawler : RepositoryCrawler {
+    override val LANGUAGE: String = "java"
+    override val FILE_EXTENSION: String = ".java"
+    override val LIMIT: String = "50"
 }
