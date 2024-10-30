@@ -84,8 +84,8 @@ interface RepositoryCrawler {
             }
         }
 
-    suspend fun fetchRepositories(cursor: String = ""): List<Repository> {
-        var lastCursor = cursor
+    suspend fun fetchRepositories(): List<Repository> {
+        var lastCursor = ""
         val repositories = mutableListOf<Repository>()
 
         while (repositories.size < LIMIT) {

@@ -15,8 +15,9 @@ object RepositoryService {
     }
 
     suspend fun fetchRepositoriesLightAndSaveAll(): List<Repository> {
-        val cursor = ElasticsearchService.getLastCursor() ?: ""
-        val repositoryList = JavaRepositoryCrawler.fetchRepositories(cursor)
+        // TODO find alternative way to continue from last saved data. Github api doesn't allow to give cursor later.
+        // val cursor = ElasticsearchService.getLastCursor() ?: ""
+        val repositoryList = JavaRepositoryCrawler.fetchRepositories()
         repositoryList.forEach { repository -> repository.fetchRepoFiles() }
         repositoryList.filter { it.repoFiles.isNotEmpty() }
             .forEach { repository ->

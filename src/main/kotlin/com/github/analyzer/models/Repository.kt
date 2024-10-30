@@ -1,5 +1,6 @@
 package com.github.analyzer.models
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.github.analyzer.crawlers.JavaRepositoryCrawler
 import com.github.analyzer.service.ElasticsearchService
 import com.github.analyzer.utils.GraphQL.getFetchFileContentsQuery
@@ -10,14 +11,18 @@ private val logger = KotlinLogging.logger {}
 
 @Serializable
 class Repository(
-    val name: String,
-    val url: String,
-    val owner: Owner,
-    val primaryLanguage: PrimaryLanguage,
-    val branch: Branch
+    @JsonProperty("name") val name: String,
+    @JsonProperty("url") val url: String,
+    @JsonProperty("owner") val owner: Owner,
+    @JsonProperty("primaryLanguage") val primaryLanguage: PrimaryLanguage,
+    @JsonProperty("branch") val branch: Branch
 ) {
+    @JsonProperty("repoFiles")
     var repoFiles: List<RepoFile> = emptyList()
+    @JsonProperty("cursor")
     var cursor: String? = null
+    @JsonProperty("timestamp")
+    var timestamp: String? = null
 
     suspend fun fetchRepoFiles() {
         if (repoFiles.isEmpty()) {
@@ -64,11 +69,11 @@ class Repository(
     }
 
     @Serializable
-    data class PrimaryLanguage(val name: String)
+    data class PrimaryLanguage(@JsonProperty("name") val name: String)
 
     @Serializable
-    data class Owner(val username: String)
+    data class Owner(@JsonProperty("username") val username: String)
 
     @Serializable
-    data class Branch(val name: String)
+    data class Branch(@JsonProperty("name") val name: String)
 }
