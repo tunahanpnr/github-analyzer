@@ -1,6 +1,7 @@
 package com.github.analyzer.models
 
 import com.github.analyzer.crawlers.JavaRepositoryCrawler
+import com.github.analyzer.service.ElasticsearchService
 import com.github.analyzer.utils.GraphQL.getFetchFileContentsQuery
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.Serializable
@@ -16,6 +17,7 @@ class Repository(
     val branch: Branch
 ) {
     var repoFiles: List<RepoFile> = emptyList()
+    var cursor: String? = null
 
     suspend fun fetchRepoFiles() {
         if (repoFiles.isEmpty()) {
@@ -55,6 +57,10 @@ class Repository(
             return emptyList()
         }
         return listOf(repoFile.path.substringAfterLast('/').substringBefore(".java"))
+    }
+
+    fun saveToElastic() {
+        ElasticsearchService.saveRepository(this)
     }
 
     @Serializable

@@ -84,25 +84,28 @@ interface RepositoryCrawler {
             }
         }
 
-    suspend fun fetchRepositories(): List<Repository> {
+    suspend fun fetchRepositories(cursor: String = ""): List<Repository> {
+        var lastCursor = cursor
         val repositories = mutableListOf<Repository>()
-        var cursor = ""
 
         while (repositories.size < LIMIT) {
-            val query = getRepositoryQuery(LANGUAGE, cursor)
+            val query = getRepositoryQuery(LANGUAGE, lastCursor)
 
             val response = client.post(getGraphQLBaseURL()) {
                 contentType(ContentType.Application.Json)
                 setBody(mapOf("query" to query))
             }
 
-            val nodes: List<Repository> = response.body<SearchResponse>().data.search.edges.map { it.node }
+            val nodes: List<Repository> = response.body<SearchResponse>().data.search.edges.map {
+                it.node.cursor = it.cursor
+                it.node
+            }
             repositories.addAll(nodes)
 
             if (!response.body<SearchResponse>().data.search.pageInfo.hasNextPage || repositories.size >= LIMIT) {
                 break
             }
-            cursor = response.body<SearchResponse>().data.search.pageInfo.endCursor
+            lastCursor = response.body<SearchResponse>().data.search.pageInfo.endCursor
         }
 
         return repositories.take(LIMIT)

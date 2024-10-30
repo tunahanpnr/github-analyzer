@@ -15,12 +15,14 @@ object RepositoryService {
     }
 
     suspend fun fetchRepositoriesLightAndSaveAll(): List<Repository> {
-        val repositoryList = JavaRepositoryCrawler.fetchRepositories()
+        val cursor = ElasticsearchService.getLastCursor() ?: ""
+        val repositoryList = JavaRepositoryCrawler.fetchRepositories(cursor)
         repositoryList.forEach { repository -> repository.fetchRepoFiles() }
         repositoryList.filter { it.repoFiles.isNotEmpty() }
-            .forEach { repository -> repository.fetchClassNamesLight() }
-
-        ElasticsearchService.saveRepositoryBulk(repositoryList)
+            .forEach { repository ->
+                repository.fetchClassNamesLight()
+                repository.saveToElastic()
+            }
 
         return repositoryList
     }
