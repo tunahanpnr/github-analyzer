@@ -4,7 +4,7 @@ import com.github.analyzer.crawlers.JavaRepositoryCrawler
 import com.github.analyzer.models.Repository
 
 object RepositoryService {
-    suspend fun fetchClassNamesAndSaveAll(): List<Repository> {
+    suspend fun fetchRepositoriesAndSaveAll(): List<Repository> {
         val repositoryList = JavaRepositoryCrawler.fetchRepositories()
         repositoryList.forEach { repository -> repository.fetchRepoFiles() }
         repositoryList.filter { it.repoFiles.isNotEmpty() }
@@ -14,7 +14,7 @@ object RepositoryService {
         return repositoryList
     }
 
-    suspend fun fetchClassNamesLightAndSaveAll(): List<Repository> {
+    suspend fun fetchRepositoriesLightAndSaveAll(): List<Repository> {
         val repositoryList = JavaRepositoryCrawler.fetchRepositories()
         repositoryList.forEach { repository -> repository.fetchRepoFiles() }
         repositoryList.filter { it.repoFiles.isNotEmpty() }

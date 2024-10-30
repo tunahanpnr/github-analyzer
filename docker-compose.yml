@@ -25,7 +25,7 @@ services:
       - elk
     depends_on:
       - elasticsearch
-  kotlin-app:
+  github-analyzer:
     build:
       context: .
     container_name: github-analyzer
