@@ -55,6 +55,7 @@
       - Additionally, this approach does not capture all class names since it does not analyze the actual file content.
 
 - Please keep these two scenarios in mind while using the application.
+- To run it faster, change the LIMIT variable in JavaRepositoryCrawler. This changes number of repositories will be fetched. 
 
 ### Analyzing the Loaded Data
 - For data analysis, we recommend using **ElasticSearch** and **Kibana**.
