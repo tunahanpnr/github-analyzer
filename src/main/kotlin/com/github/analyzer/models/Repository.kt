@@ -1,8 +1,11 @@
 package com.github.analyzer.models
 
 import com.github.analyzer.crawlers.JavaRepositoryCrawler
+import com.github.analyzer.utils.GraphQL.getFetchFileContentsQuery
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.Serializable
 
+private val logger = KotlinLogging.logger {}
 
 @Serializable
 class Repository(
@@ -14,43 +17,44 @@ class Repository(
 ) {
     var repoFiles: List<RepoFile> = emptyList()
 
-    suspend fun setRepoFiles() {
+    suspend fun fetchRepoFiles() {
         if (repoFiles.isEmpty()) {
             repoFiles = JavaRepositoryCrawler.fetchRepositoryFiles(this)
         }
     }
 
-    suspend fun setClassNameOfTheRepoFiles() {
-        val contents: List<String> = JavaRepositoryCrawler.fetchContent(getFetchFileContentsQuery())
-        val classNames: List<List<String>> = contents.map { getClassNamesFromJavaFile(it) }
+    suspend fun fetchClassNames() {
+        val contents: List<String> = JavaRepositoryCrawler.fetchContent(getFetchFileContentsQuery(this))
+        val classNames: List<List<String>> = contents.map { getClassNamesFromContent(it) }
         if (classNames.size != repoFiles.size) {
-            print("Number of fetched class names does not equal the number of repo files.")
+            logger.warn { "Number of fetched class names does not equal the number of repo files." }
         } else {
             classNames.forEachIndexed { index, strings -> repoFiles[index].classNames = strings }
         }
     }
 
-    private fun getFetchFileContentsQuery(): List<String> {
-        val chunks = repoFiles.chunked(250)
-        return chunks.map { getFetchFileContentsQuery(it) }
+    fun fetchClassNamesLight() {
+        val classNames: List<List<String>> = repoFiles.map { getClassNamesFromFilePath(it) }
+        if (classNames.size != repoFiles.size) {
+            logger.warn { "Number of fetched class names does not equal the number of repo files." }
+        } else {
+            classNames.forEachIndexed { index, strings -> repoFiles[index].classNames = strings }
+        }
     }
 
-    private fun getFetchFileContentsQuery(chunk: List<RepoFile>): String {
-        return """
-            query RepoFiles {
-              repository(owner: "${owner.username}", name: "$name") {
-                ${chunk.mapIndexed { index, repoFile -> repoFile.getFetchFileQuery(index.toString()) }.joinToString("\n")}
-              }
-            }
-        """.trimIndent()
-    }
-
-    private fun getClassNamesFromJavaFile(content: String): List<String> {
+    private fun getClassNamesFromContent(content: String): List<String> {
         val regex = Regex("\\b(class|interface)\\s+(\\w+)")
 
         return regex.findAll(content)
             .map { it.groupValues[1] }
             .toList()
+    }
+
+    private fun getClassNamesFromFilePath(repoFile: RepoFile): List<String> {
+        if (!repoFile.path.contains(".java")) {
+            return emptyList()
+        }
+        return listOf(repoFile.path.substringAfterLast('/').substringBefore(".java"))
     }
 
     @Serializable

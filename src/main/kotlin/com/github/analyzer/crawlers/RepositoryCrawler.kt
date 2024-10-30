@@ -2,6 +2,9 @@ package com.github.analyzer.crawlers
 
 import com.github.analyzer.models.RepoFile
 import com.github.analyzer.models.Repository
+import com.github.analyzer.utils.GraphQL.getGraphQLBaseURL
+import com.github.analyzer.utils.GraphQL.getRepositoryQuery
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
@@ -16,16 +19,36 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
+private val logger = KotlinLogging.logger {}
 
 interface RepositoryCrawler {
     @Serializable
-    data class Search(val nodes: List<Repository>)
+    data class SearchResponse(
+        val data: Data
+    )
 
     @Serializable
-    data class SearchRepoData(val search: Search)
+    data class Data(
+        val search: SearchData
+    )
 
     @Serializable
-    data class SearchRepoResponse(val data: SearchRepoData)
+    data class SearchData(
+        val edges: List<Edge>,
+        val pageInfo: PageInfo
+    )
+
+    @Serializable
+    data class Edge(
+        val node: Repository,
+        val cursor: String
+    )
+
+    @Serializable
+    data class PageInfo(
+        val endCursor: String,
+        val hasNextPage: Boolean,
+    )
 
     @Serializable
     data class FetchRepoFilesResponse(val tree: List<RepoFile>)
@@ -42,32 +65,8 @@ interface RepositoryCrawler {
 
     val LANGUAGE: String
     val FILE_EXTENSION: String
-    val LIMIT: String
+    val LIMIT: Int
 
-    val GRAPHQL_URL: String
-        get() = "https://api.github.com/graphql"
-    val REPOSITORY_QUERY: String
-        get() = """
-                    query {
-                        search(query: "language:$LANGUAGE", type: REPOSITORY, first: $LIMIT) {
-                            nodes {
-                                ... on Repository {
-                                    name
-                                    url
-                                    primaryLanguage {
-                                        name
-                                    }
-                                    branch: defaultBranchRef {
-                                        name
-                                    }
-                                    owner {
-                                        username: login
-                                    }
-                                }
-                            }
-                        }
-                    }
-                """
     val GITHUB_TOKEN: String
         get() = System.getenv("GITHUB_TOKEN")
 
@@ -86,12 +85,27 @@ interface RepositoryCrawler {
         }
 
     suspend fun fetchRepositories(): List<Repository> {
-        val response = client.post(GRAPHQL_URL) {
-            contentType(ContentType.Application.Json)
-            setBody(mapOf("query" to REPOSITORY_QUERY))
-        }.body<SearchRepoResponse>()
+        val repositories = mutableListOf<Repository>()
+        var cursor = ""
 
-        return response.data.search.nodes
+        while (repositories.size < LIMIT) {
+            val query = getRepositoryQuery(LANGUAGE, cursor)
+
+            val response = client.post(getGraphQLBaseURL()) {
+                contentType(ContentType.Application.Json)
+                setBody(mapOf("query" to query))
+            }
+
+            val nodes: List<Repository> = response.body<SearchResponse>().data.search.edges.map { it.node }
+            repositories.addAll(nodes)
+
+            if (!response.body<SearchResponse>().data.search.pageInfo.hasNextPage || repositories.size >= LIMIT) {
+                break
+            }
+            cursor = response.body<SearchResponse>().data.search.pageInfo.endCursor
+        }
+
+        return repositories.take(LIMIT)
     }
 
     suspend fun fetchRepositoryFiles(repository: Repository): List<RepoFile> {
@@ -102,22 +116,22 @@ interface RepositoryCrawler {
                 }.body<FetchRepoFilesResponse>()
             return response.tree.filter { it.path.removeSurrounding("\"").endsWith(FILE_EXTENSION) }
         } catch (e: HttpRequestTimeoutException) {
-            println("Request timeout: \"https://api.github.com/repos/${repository.owner.username}/${repository.name}/git/trees/${repository.branch.name}?recursive=1\"")
+            logger.error { "Request timeout: \"https://api.github.com/repos/${repository.owner.username}/${repository.name}/git/trees/${repository.branch.name}?recursive=1\"" }
         }
         return emptyList()
     }
 
     suspend fun fetchContent(queries: List<String>): List<String> {
         val responses = queries.mapNotNull { query ->
-            val response = client.post(GRAPHQL_URL) {
+            val response = client.post(getGraphQLBaseURL()) {
                 contentType(ContentType.Application.Json)
                 setBody(mapOf("query" to query))
             }
             try {
                 response.body<FetchContentResponse>()
             } catch (e: Exception) {
-                println("Failed to parse response: ${response.bodyAsText()}")
-                println("Error: ${e.message}")
+                val text = response.bodyAsText()
+                logger.error { "Failed to parse response: $text, error: ${e.message}" }
                 null
             }
         }
