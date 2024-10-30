@@ -1,27 +1,35 @@
 # GitHub Java-ClassName Analyzer
 
-## Installation
+## Installation and Running
+
+### Recommended Way
 
 1. **Clone the repository:**
-
-   ```bash
+      ```bash
    git clone https://github.com/your-username/your-repo-name.git
    cd your-repo-name
    ```
+2. **Install docker compose into your system. [installation guide](https://docs.docker.com/compose/install/)**
 
+3. **Run the containers**
+   ```bash
+   docker compose up
+   ```
+### Manual Installing
+1. **Clone the repository as above**
 2. **Install dependencies:**
 
-   Ensure you have [Gradle](https://gradle.org/install/)
-   and [JDK 17](https://docs.oracle.com/en/java/javase/23/install/overview-jdk-installation.html) or higher installed.
+   - [Gradle](https://gradle.org/install/)
+   - [JDK 17](https://docs.oracle.com/en/java/javase/23/install/overview-jdk-installation.html) or higher installed.
+   - [ElasticSearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html)
+   - [Kibana](https://www.elastic.co/guide/en/kibana/current/install.html)
 
-   To check if you have them installed, you can run:
-
-   ```bash
-   gradle -v
-   java -version
+3. Run all the services
+   - Check the documentations for running ElasticSearch and Kibana
+   - Then, just run the gradle as below.
+   ```shell
+   export $(cat .env | xargs) && ./gradlew run
    ```
-
-   If both are installed, you should see version information displayed.
 
 3. **Build the application:**
 
@@ -31,13 +39,3 @@
    ./gradlew build
    ```
 
-## Run the Application
-
-Once the application has been built, you can run it using Gradle:
-
-```bash
-PORT="port number" GITHUB_TOKEN="github access token" ./gradlew run
-```
-
-This command starts the application. You should see output in the terminal indicating the application is running. Make
-sure that you have changed the PORT and GITHUB_TOKEN parameters with yours.
